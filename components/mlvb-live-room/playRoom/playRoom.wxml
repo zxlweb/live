@@ -1,0 +1,18 @@
+<!-- <import src="playRoom.skeleton.wxml" /> -->
+<!-- <template is="skeleton" /> -->
+<image src='https://htd-zhuangtai-pub.oss-cn-shanghai.aliyuncs.com/base/1670918994509_47.96621897927169_f4479d76-ca69-4ad1-8486-d2cd100744f3.jpg' wx:if="{{!initOver}}" class="skeleton" style="height:{{screenHeight}}px" />
+<view class="pagess {{isShowPopup1?'move':''}}" style="height:{{screenHeight}}px" wx:else>
+  <!-- object-fit="fillCrop" 该属性解决黑边问题 -->
+  <!-- 海报 -->
+  <view wx:if="{{isSaveImg}}" class="posterMask" bindtap="toCancel">
+    <view class="save-img">
+      <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653876556350_9.744852524272218_081c1802-fc24-46a9-b230-2021339be33e.png" class="close-saveBtn" catchtap="closeSaveBtn" />
+      <image src="{{saveShareImg}}" style="width: 620rpx; height: 874rpx; border-radius: 12rpx" />
+      <view class="code-btn" catchtap="toSave">长按保存图片到相册</view>
+    </view>
+  </view>
+  <view wx:if="{{isCanvasShow}}" style="position: fixed; left: -1200rpx; z-index: 10; visibility: hidden">
+    <canvas canvas-id="saveImg" style="width: 620rpx; height: 874rpx" />
+  </view>
+</view>
+<check-password wx:if="{{checkPwdModal}}" liveRecordNo="{{liveRecordNo}}" memberId="{{memberId}}" bind:closeModal='closeCheckPwdModal' bind:pwdCheckSuccess="pwdIsRight" />

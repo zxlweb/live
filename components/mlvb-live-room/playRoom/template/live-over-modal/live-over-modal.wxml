@@ -1,0 +1,11 @@
+<view>
+    <view class="modal-live-over">
+        <view class="modal-main">
+            <view class="title">当前直播已结束</view>
+            <view class="footer">
+                <view class="cancel-btn" bindtap='closeModal'>取消</view>
+                <view class="sure-btn" bindtap='watchReplay' wx:if="{{!videoUrl}}">观看回放</view>
+            </view>
+        </view>
+    </view>
+</view>

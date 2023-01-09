@@ -1,0 +1,64 @@
+<!-- 主播首页头 -->
+<template name="head1">
+    <view class="img-wrap" bindtap='goback'>
+        <image src="/assets/images/icon/icon-goback.png" />
+    </view>
+    <view>{{headData.title}}</view>
+</template>
+<template name="head2">
+    <view class="flex jc-center">
+        <view style="font-size:20rpx;color:#000;position:absolute;left:10px">></view>
+        <view style="color:#000">{{headData.title}}</view>
+    </view>
+</template>
+<!-- 直播页面头 -->
+<template name="head3">
+    <view class="flex  nav-wrap living-head {{headData.fullScreen==true?'full-screen':''}}" style="padding-right:{{navPaddingRight}}px">
+        <view class="flex" style="width:{{headData.fullScreen==true?'90%':'44%'}}">
+            <view class="img-wrap" bindtap='liveRoomGoback'>
+                <image src="/assets/images/icon/icon-goback.png" />
+            </view>
+            <view class="flex  nav-xx" catchtap='goAnchorPage'>
+                <image class="shop-icon" src="{{headData.bizHeadImg?headData.bizHeadImg:'http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656040291112_52.70513921634718_eb692e3f-b8ef-49c2-8225-bb89f4a14cee.png'}}" />
+                <view class="shop-des">
+                    <text class="shop-name">{{headData.orgName}}</text>
+                    <text class="poplu-num">人气值：{{headData.popularity}}</text>
+                </view>
+            </view>
+        </view>
+        <!-- 粉丝头像 -->
+        <view class="fans-icon" catchtap="showRankList">
+            <view wx:for="{{headData.livePraiseList}}" wx:key="index" class="icon-module">
+                <image class="icon-pic" src="{{item.headImg||'http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1658393500865_20.215100001065533_e0a9a297-fc4c-4389-a2d3-eb66373f2f80.png'}}" />
+            </view>
+            <view class="show-model">
+                <image class="fans_icon" src="/assets/images/fans-more.png" />
+            </view>
+        </view>
+    </view>
+</template>
+<!-- 普通头 -->
+<template name="head4">
+    <view class="head4" style="{{styleString}}">
+        <view class="img-wrap" bindtap='goback'>
+            <!-- <image src="/assets/images/icon/icon-goback.png" /> -->
+            <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656493493577_94.76046301175302_1c7d6ab3-6fa7-4c09-bb56-fc611757cba2.png" />
+        </view>
+        <view style="color:{{styleInfo.color?styleInfo.color:'#000'}}">{{headData.title}}</view>
+    </view>
+</template>
+<!-- 直播预告头 -->
+<template name="head5">
+    <view class="flex  nav-wrap" style="padding-right:{{navPaddingRight}}px">
+        <view class="img-wrap" bindtap='goback'>
+            <image src="/assets/images/icon/icon-goback.png" />
+        </view>
+        <view class="flex  nav-xx" catchtap='goAnchorPage'>
+            <image class="shop-icon" src="{{headData.bizHeadImg?headData.bizHeadImg:'http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656040291112_52.70513921634718_eb692e3f-b8ef-49c2-8225-bb89f4a14cee.png'}}" />
+            <view class="shop-des">
+                <text class="shop-name">{{headData.orgName}}</text>
+                <text class="poplu-num">人气值：{{headData.popularity}}</text>
+            </view>
+        </view>
+    </view>
+</template>

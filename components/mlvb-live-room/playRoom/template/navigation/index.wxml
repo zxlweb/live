@@ -1,0 +1,10 @@
+<import src="./headTmp.wxml" />
+<view class="nav" style="{{styleString}}">
+    <view class="nav-main">
+        <!-- 胶囊区域 -->
+        <view class="capsule-box" style="height:{{menuHeight}}px; min-height:{{menuHeight}}px; line-height:{{menuHeight}}px; bottom:{{menuBotton}}px;left:0px;">
+            <!-- 导航内容区域 -->
+            <template is="{{headTmpName}}" data="{{headData,navPaddingRight,styleInfo}}"></template>
+        </view>
+    </view>
+</view>

@@ -1,0 +1,289 @@
+<template name="floattemplate">
+    <live-player id="player" style="height:{{screenHeight}}px;" src="{{pullFlowUrl}}" mode="live" min-cache="1" max-cache="3" autoplay='trwxeh43ue' bindstatechange="statechange" binderror="error" bindfullscreenchange="onFullScreenChange" picture-in-picture-mode="{{pim}}">
+        <video id="video-player" src="{{recordLiveVideoUrl}}" wx:if="{{liveMethod==2}}" autoplay='true' style="width:100%;height:100%" controls="false" />
+        <navigation headData='{{headData}}' styleInfo="{{styleInfo}}" fullScreen="{{fullScreen}}" styleArr="{{styleArr}}" headTmpName='head3' bind:showRankList="shoRankModal" bindfullscreenchange="onFullScreenChange" bind:extFullScreen="exitFullScreen" />
+        <!-- 点赞效果 -->
+        <live-like count="{{count}}" bind:likeOver="handleLikeChange" />
+        <view style="height:{{screenHeight}}px;;box-sizing:border-box;z-index:8" class="action-modal">
+            <view class="top" bindtap="closeInpBox" style="{{showChat ? 'animation: showhat 0.3s linear forwards;' : 'animation: notChat 0.3s linear forwards;'}}">
+                <view style="height:{{screenHeight}}px;padding-top:{{navBarHeight}}px;box-sizing:border-box" class="contain-wrap">
+                    <view style="padding-right: 15rpx">
+                        <!-- 公告 -->
+                        <view class="contain" wx:if="{{notice_content}}">
+                            <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656040244476_55.32488355586806_42e8bfd8-57da-42cf-98f0-f14e7dbf00d0.png" class="con-icon" />
+                            <view class="announcement-text">
+                                <view class="animation-container">{{ notice_content }}</view>
+                            </view>
+                        </view>
+                        <!-- 弹幕1 竖屏 -->
+                        <view id="message-items" style="{{resLiveRoomGoodsDto ? 'bottom: 22%;' : 'bottom: 15%;'}}" class="vertical" wx:if="{{!fullScreen&&!showBarrageCloud}}">
+                            <!-- 正在购买消息提醒 -->
+                            <view class="attract" wx:if="{{attractModel}}" style="{{resLiveRoomGoodsDto ? 'bottom: 50%' : 'bottom: 37%' }}">
+                                <view class="attract-msg">{{ isBuying }}</view>
+                            </view>
+                            <scroll-view class="scrollBox" scroll-y scroll-into-view="{{rollId}}">
+                                <view id="{{'chat'+ index}}" class="bullet-chat" wx:for="{{bulletData}}" wx:key="index">
+                                    <image src="/assets/images/fans.png" style="width:36px;height:14px;position:relative;top: 3px;" />
+                                    <view class="bulletChat-nike" style="{{'color:' + item.color + ';'}}">
+                                        {{ item.nick }}：
+                                    </view>
+                                    <text style="line-height:18px;word-break: break-all;">
+                                        {{ item.message }}
+                                    </text>
+                                </view>
+                            </scroll-view>
+                        </view>
+                        <!-- 弹幕1 横屏 -->
+                        <view id="message-items" style="bottom: 18%" class="horizon" wx:if="{{fullScreen&&!showBarrageCloud}}">
+                            <!-- 正在购买消息提醒 -->
+                            <view class="attract" wx:if="{{attractModel}}" style="{{resLiveRoomGoodsDto ? 'bottom: 50%' : 'bottom: 37%' }}">
+                                <view class="attract-msg">{{ isBuying }}</view>
+                            </view>
+                            <scroll-view class="scrollBox" scroll-y scroll-into-view="{{rollId}}">
+                                <view id="{{'chat'+ index}}" class="bullet-chat" wx:for="{{bulletData}}" wx:key="index">
+                                    <image src="/assets/images/fans.png" style="width:36px;height:14px;position:relative;top: 3px;" />
+                                    <view class="bulletChat-nike" style="{{'color:' + item.color + ';'}}">
+                                        {{ item.nick }}：
+                                    </view>
+                                    <text style="line-height:18px">{{ item.message }}</text>
+                                </view>
+                            </scroll-view>
+                        </view>
+                        <!-- 弹幕2 -->
+                        <view class='displayGroup' style="position:absolute;width:100%;top:40rpx" wx:if="{{showBarrageCloud}}">
+                            <view class='dmGroup ' wx:for="{{ dmData }}" wx:key="{{ item.id }}" style="top:{{ item.top }}%; animation: dmAnimation {{item.time}}s linear {{ index*3 }}s infinite; ">
+                                <view class='dmItem '>
+                                    <view class='dm'>
+                                        <text class='content'>{{ item.message }}</text>
+                                    </view>
+                                </view>
+                            </view>
+                            <view class='focus'>
+                                <image src='{{ banner }}' class='img' mode='widthFix'></image>
+                            </view>
+                        </view>
+                        <!-- 底部 竖屏 -->
+                        <view class="vertical" wx:if="{{!fullScreen}}">
+                            <!-- 直播中的商品 -->
+                            <view class="good-pop" wx:if="{{resLiveRoomGoodsDto}}" catchtap="goDetail" data-item="{{resLiveRoomGoodsDto}}">
+                                <image class="good-pic" src="{{resLiveRoomGoodsDto.mainPictureUrl||defaultGoodsImg}}" />
+                                <view class="good-right">
+                                    <view class="good-des">
+                                        {{ resLiveRoomGoodsDto.goodsName }}
+                                    </view>
+                                    <view class="good-bottom">
+                                        <view class="good-price">
+                                            <view class="now-price">
+                                                <view class="symbol">￥</view>
+                                                <view>{{ resLiveRoomGoodsDto.retailPrice }}</view>
+                                            </view>
+                                        </view>
+                                        <view class="goods-limit" data-item="{{resLiveRoomGoodsDto}}" wx:if="{{resLiveRoomGoodsDto.goodsLimit}}">
+                                            已限购
+                                        </view>
+                                        <view class="now-buy" catchtap="goBuy" data-item="{{resLiveRoomGoodsDto}}" data-id='resLiveRoomGoodsDto' wx:else>
+                                            马上抢
+                                        </view>
+                                    </view>
+                                </view>
+                            </view>
+                            <!-- 直播底部 -->
+                            <view class="player-bottom ">
+                                <image src="../../assets/images/icon-shop-cart.png" class="shop-cart" catchtap="goodsList" />
+                                <view class="goodsNum" wx:if="{{goodsNum}}" catchtap="goodsList">
+                                    {{ goodsNum }}
+                                </view>
+                                <view class="chat" catchtap="sendPop">跟主播说点什么吧</view>
+                                <view style="display:flex" class="icon-wrap">
+                                    <!-- 弹幕云开 -->
+                                    <image wx:if="{{showBarrageCloud}}" src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656396891146_27.930129550206317_b750ed6e-4f90-4fe3-86eb-a9a1351a7549.png" class="barrage" catchtap="changeBarrageCloud" data-item='hide' />
+                                    <!-- 弹幕云关 -->
+                                    <image wx:if="{{!showBarrageCloud}}" src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656396803323_41.470853329909616_4b91bced-fdbf-4f3a-98a4-d9bdc065e16e.png" class="barrage" catchtap="changeBarrageCloud" data-item='show' />
+                                    <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653547714601_40.210027021182704_faf73cc0-a718-4859-be4d-7064f421897f.png" class="orientation" catchtap='onOrientationClick' />
+                                    <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653548619828_13.854058547646508_2550262a-eb93-40fe-879e-70bf853b0999.png" class="share" catchtap="share" />
+                                    <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653548384976_92.7477013567124_cf2ae85a-72b9-4a49-a226-ca1e86126841.png" class="like" catchtap="likeClickHandler" />
+                                </view>
+                            </view>
+                        </view>
+                        <!-- 底部 横屏 -->
+                        <view class="footer-horizon" wx:if="{{fullScreen}}">
+                            <!-- 直播底部 -->
+                            <view class="player-bottom ">
+                                <view style="display:flex;">
+                                    <view class="chat" catchtap="sendPop">跟主播说点什么吧</view>
+                                    <view style="position:relative" catchtap="goodsList">
+                                        <image src="../../assets/images/icon-shop-cart.png" class="shop-cart" />
+                                        <view class="goodsNum" wx:if="{{goodsNum}}">
+                                            {{ goodsNum }}
+                                        </view>
+                                    </view>
+                                </view>
+                                <!-- 直播中的商品 -->
+                                <view class="good-pop" wx:if="{{resLiveRoomGoodsDto}}" catchtap="goDetail" data-item="{{resLiveRoomGoodsDto}}">
+                                    <image class="good-pic" src="{{resLiveRoomGoodsDto.mainPictureUrl||defaultGoodsImg}}" />
+                                    <view class="good-right">
+                                        <view class="good-des">
+                                            {{ resLiveRoomGoodsDto.goodsName }}
+                                        </view>
+                                        <view class="good-bottom">
+                                            <view class="good-price">
+                                                <view class="now-price">
+                                                    <view class="symbol">￥</view>
+                                                    <view>
+                                                        {{ resLiveRoomGoodsDto.retailPrice }}
+                                                    </view>
+                                                </view>
+                                            </view>
+                                            <view class="goods-limit" data-item="{{resLiveRoomGoodsDto}}" wx:if="{{resLiveRoomGoodsDto.goodsLimit}}">
+                                                已限购
+                                            </view>
+                                            <view class="now-buy" catchtap="goBuy" data-item="{{resLiveRoomGoodsDto}}" wx:else data-id='resLiveRoomGoodsDto'>
+                                                马上抢
+                                            </view>
+                                        </view>
+                                    </view>
+                                </view>
+                                <view style="display:flex">
+                                    <!-- 弹幕云开 -->
+                                    <image wx:if="{{showBarrageCloud}}" src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656396891146_27.930129550206317_b750ed6e-4f90-4fe3-86eb-a9a1351a7549.png" class="barrage" catchtap="changeBarrageCloud" data-item='hide' />
+                                    <!-- 弹幕云关 -->
+                                    <image wx:if="{{!showBarrageCloud}}" src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656396803323_41.470853329909616_4b91bced-fdbf-4f3a-98a4-d9bdc065e16e.png" class="barrage" catchtap="changeBarrageCloud" data-item='show' />
+                                    <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653547714601_40.210027021182704_faf73cc0-a718-4859-be4d-7064f421897f.png" class="orientation" catchtap='onOrientationClick' />
+                                    <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653548619828_13.854058547646508_2550262a-eb93-40fe-879e-70bf853b0999.png" class="share" catchtap="share" />
+                                    <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653548384976_92.7477013567124_cf2ae85a-72b9-4a49-a226-ca1e86126841.png" class="like" catchtap="likeClickHandler" />
+                                </view>
+                            </view>
+                        </view>
+                        <!-- 排行榜弹窗 -->
+                        <view class="ranking-pop" wx:if="{{rankingModel}}">
+                            <view class="ranking-top">
+                                <view class="tab">
+                                    <view class="tab-list {{tabIndex==1?'on':'' }}" catchtap="tabClick" data-tabindex="1">
+                                        <view class="title">点赞榜单</view>
+                                        <view class="hr" wx:if="{{tabIndex==1}}"></view>
+                                    </view>
+                                    <view class="tab-list {{tabIndex==2?'on':'' }}" catchtap="tabClick" data-tabindex="2">
+                                        <view class="title">邀请榜单</view>
+                                        <view class="hr" wx:if="{{tabIndex==2}}"></view>
+                                    </view>
+                                </view>
+                                <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653876556350_9.744852524272218_081c1802-fc24-46a9-b230-2021339be33e.png" class="close" catchtap="close" />
+                            </view>
+                            <view class="name-list">
+                                <view>观众信息</view>
+                                <view wx:if="{{tabIndex==1}}">点赞数</view>
+                                <view wx:if="{{tabIndex==2}}">邀请好友数</view>
+                            </view>
+                            <view class="ranking-list" scroll-y>
+                                <view wx:for="{{rankList}}" key="key">
+                                    <view class="ranking-single">
+                                        <view class="single-left">
+                                            <image class="rank-icon" wx:if="{{index ==0}}" src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653978634380_38.79967295900265_3ba93bc8-f796-4c5d-ab36-b638e0b3c5d3.png" />
+                                            <image class="rank-icon" wx:if="{{index ==1}}" src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653978644916_47.16561819671931_769e760a-f446-494a-be0a-4bdb27bedf21.png" />
+                                            <image class="rank-icon" wx:if="{{index ==2}}" src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653978651843_2.4177227762274156_021db05c-c0a9-4f25-8b81-cc4cc6552c7d.png" />
+                                            <view class="rank-num" wx:if="{{index > 2 }}">
+                                                {{index+1}}
+                                            </view>
+                                            <image class="nike-icon" src="{{item.headImg||'http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1658393500865_20.215100001065533_e0a9a297-fc4c-4389-a2d3-eb66373f2f80.png'}}" />
+                                            <view class="nike-text">
+                                                {{item.nickName?item.nickName:'未知用户'}}
+                                            </view>
+                                        </view>
+                                        <view wx:if="{{tabIndex==1}}" class="ranking-num">
+                                            {{item.praiseNum}}
+                                        </view>
+                                        <view wx:if="{{tabIndex==2}}" class="ranking-num">
+                                            {{item.inviteNum}}
+                                        </view>
+                                    </view>
+                                </view>
+                            </view>
+                        </view>
+                        <!-- 商品弹窗 -->
+                        <view class="goods-pop" wx:if="{{goodsModel}}">
+                            <view class="goods-top">
+                                <view class="top-name">商品列表</view>
+                                <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653876556350_9.744852524272218_081c1802-fc24-46a9-b230-2021339be33e.png" class="goods-close" catchtap="goodsClose" />
+                            </view>
+                            <view class="no-goods" wx:if="{{!goodLists.length}}">当前没有商品~</view>
+                            <view wx:if="{{goodLists}}" class="goods-list" scroll-y>
+                                <view class="good-single" wx:for="{{goodLists}}" wx:key="index" wx:for-item="item" data-item="{{item}}" catchtap="goDetail">
+                                    <view class="good-sort" style="{{item.hotGoodsFlag == 1 ? 'background: #FB3E5A;': 'background: #838383;'}}">
+                                        {{item.sequenceNum}}
+                                    </view>
+                                    <image class="good-pic" src="{{item.mainPictureUrl||defaultGoodsImg}}" />
+                                    <view class="good-right">
+                                        <view class="good-des">
+                                            <view wx:if="{{item.hotGoodsFlag == 2}}" class="mainPushGoods">
+                                                主推中
+                                            </view>
+                                            <view class="good-name">{{item.goodsName}}</view>
+                                        </view>
+                                        <view class="good-bottom">
+                                            <view class="good-price">
+                                                <view class="now-price">
+                                                    <view class="symbol">￥</view>
+                                                    <view>{{item.retailPrice}}</view>
+                                                </view>
+                                                <view wx:if="{{item.marketPrice != null}}" class="ago-price">
+                                                    ￥{{item.marketPrice}}
+                                                </view>
+                                            </view>
+                                            <view class="goods-limit" data-item="{{item}}" wx:if="{{item.goodsLimit}}">
+                                                已限购
+                                            </view>
+                                            <view class="now-buy" catchtap="goBuy" data-item="{{item}}" wx:else data-id='goodLists' data-index='{{index}}'>
+                                                马上抢
+                                            </view>
+                                        </view>
+                                    </view>
+                                </view>
+                                <view wx:if="{{showMore}}" class="seeMore" catchtap="seeMore">
+                                    查看更多
+                                </view>
+                            </view>
+                        </view>
+                        <!-- 分享 -->
+                        <view class="share-pop" wx:if="{{shareModel}}">
+                            <view class="share-wrap">
+                                <button class="wechat-icon" open-type='share'>
+                                    <image class="share-icon" src="https://htd-applet.oss-cn-shanghai.aliyuncs.com/mini-programm/new-hzg/playing/icon-wechat.png" />
+                                    <view class="share-text">微信好友</view>
+                                </button>
+                                <view class="generate-poster" catchtap="getshareCode">
+                                    <image class="share-icon" src="https://htd-applet.oss-cn-shanghai.aliyuncs.com/mini-programm/new-hzg/playing/icon-poster.png" />
+                                    <view class="share-text">生成海报</view>
+                                </view>
+                            </view>
+                            <view class="share-bottom" catchtap="shareClose">取消</view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <!-- 发送消息弹窗 -->
+            <view class="send-form" wx:if="{{isShowPopup1}}">
+                <view class="flex-box form">
+                    <input class="flex-item" placeholder="跟主播聊点什么?" bindinput="saveInput" value="{{msg}}" bindconfirm="sendInpMsg" confirm-type="send" bindblur="bindblur" focus="{{true}}" adjust-position="{{true}}" />
+                    <view class="send-btn" catchtap="sendInpMsg">发送</view>
+                </view>
+            </view>
+            <!-- sku 弹框 -->
+            <specs specSpuId="{{specSkuId}}" btnValue="立即购买" extralInfo="{{extralInfo}}" bind:getShoppingCartNum="getShoppingCartNum"></specs>
+            <live-over-modal wx:if="{{liveOverModal}}" bind:exitRoom='exitRoom' liveRecordNo="{{liveRecordNo}}" memberId="{{memberId}}" videoUrl="{{videoUrl}}" roomCoverUrl="{{roomCoverUrl}}" roomName="{{roomName}}"></live-over-modal>
+            <!-- 主播断流提示 -->
+            <view wx:if="{{isCutOff}}" class="cut-off">
+                <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656310659114_87.09422968323194_77f16a17-6ef5-4bba-b8d9-95b16450aa2f.png" />
+                <view class="text">主播被外星人抓走啦 请耐心等待一小会~</view>
+            </view>
+            <!-- 直播冻结提示 -->
+            <view wx:if="{{frozen}}" class="frozen">
+                <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1656310768437_83.21106376432364_17d180d8-46a2-44ab-afe4-9964e0169b73.png" />
+                <view class="text">冻结</view>
+            </view>
+        </view>
+    </live-player>
+    <live-player autoplay id="player" mode="{{visualPlayers[0].mode}}" min-cache="{{visualPlayers[0].minCache}}" max-cache="{{visualPlayers[0].maxCache}}" object-fit="{{visualPlayers[0].objectFit}}" src="{{visualPlayers[0].url}}" debug="{{debug}}" muted="{{muted}}" background-mute="{{visualPlayers[0].mute}}" bindstatechange="onMainPlayState" binderror="onMainPlayError">
+        <slot name="audienceBackButton"></slot>
+        <slot name="audience"></slot>
+    </live-player>
+</template>

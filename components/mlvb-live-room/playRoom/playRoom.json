@@ -1,0 +1,10 @@
+{
+  "component": true,
+  "usingComponents": {
+    "navigation": "/template/navigation/index",
+    "live-like": "/template/live-like/liveLikeComponent",
+    "specs": "/template/specs/specs",
+    "check-password": "/template/check-password/index",
+    "live-over-modal": "/template/live-over-modal/live-over-modal"
+  }
+}
