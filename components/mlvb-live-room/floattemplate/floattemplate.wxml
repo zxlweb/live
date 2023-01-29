@@ -1,9 +1,11 @@
 <template name="floattemplate">
     <live-player id="player" style="height:{{screenHeight}}px;" src="{{pullFlowUrl}}" mode="live" min-cache="1" max-cache="3" autoplay='trwxeh43ue' bindstatechange="statechange" binderror="error" bindfullscreenchange="onFullScreenChange" picture-in-picture-mode="{{pim}}">
-        <video id="video-player" src="{{recordLiveVideoUrl}}" wx:if="{{liveMethod==2}}" autoplay='true' style="width:100%;height:100%" controls="false" />
-        <navigation headData='{{headData}}' styleInfo="{{styleInfo}}" fullScreen="{{fullScreen}}" styleArr="{{styleArr}}" headTmpName='head3' bind:showRankList="shoRankModal" bindfullscreenchange="onFullScreenChange" bind:extFullScreen="exitFullScreen" />
+        <!-- 录播 -->
+        <slot name='video'></slot>
+        <!-- 导航 -->
+        <slot name='navigation'></slot>
         <!-- 点赞效果 -->
-        <live-like count="{{count}}" bind:likeOver="handleLikeChange" />
+        <slot name='liveLike'></slot>
         <view style="height:{{screenHeight}}px;;box-sizing:border-box;z-index:8" class="action-modal">
             <view class="top" bindtap="closeInpBox" style="{{showChat ? 'animation: showhat 0.3s linear forwards;' : 'animation: notChat 0.3s linear forwards;'}}">
                 <view style="height:{{screenHeight}}px;padding-top:{{navBarHeight}}px;box-sizing:border-box" class="contain-wrap">

@@ -2,7 +2,7 @@
  * @Author: qingjiaowomissp zxlweb@163.com
  * @Date: 2022-12-29 17:17:09
  * @LastEditors: qingjiaowomissp zxlweb@163.com
- * @LastEditTime: 2023-01-04 10:45:52
+ * @LastEditTime: 2023-01-29 17:50:42
  * @FilePath: \htd-live\components\mlvb-live-room\mlbliveroomview\mlvbliveroomcore.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -19,7 +19,7 @@ var accountInfo = {
 };
 // 房间信息
 roomInfo = {
-    roomID: '',			// 视频位房间ID
+    roomNo: '',			// 视频位房间ID
     roomInfo: '',		// 房间名称
     mixedPlayURL: '', 	// 混流地址
     isCreator: false,	// 是否为创建者
@@ -30,30 +30,74 @@ roomInfo = {
     hasJoinAnchor: false,
     roomStatusCode: 0
 };
+// 事件
+var event = {
+    onRecvRoomTextMsg: function () { },// 消息通知
+};
 /**
  * [setListener 设置监听事件]
  * @param {options}
  *   onRoomDestroy: 群解散通知
  *   onRecvRoomTextMsg: 消息通知
  */
-// 事件
-var event = {
-    receiveMsg: function () { },
-    joinGroup: function () { }
-
-
-};
 
 function setListener(options) {
     if (!options) { console.log('setListener参数错误', options); return; }
-    event.receiveMsg = options.receiveMsg || function () { };
+    event.onRecvRoomTextMsg = options.onRecvRoomTextMsg || function () { };
 
+}
+/**
+ * [login 初始化登录信息]
+ * @param {options}
+ *   data: {
+ *    userID: 用户ID
+ *    userSig: 用户sig
+ *    sdkAppID: IM应用ID
+ *    userName: 用户昵称
+ *    userAvatar: 用户头像地址
+ *   }
+ *   success: 成功回调
+ *   fail: 失败回调
+ *
+ * @return success
+ *   userName: 用户昵称
+ */
+function login(options) {
+    if (!options || !options.data.sdkAppID || !options.data.userID || !options.data.userSig) {
+        console.log('init参数错误', options);
+        options.fail && options.fail({
+            errCode: -9,
+            errMsg: 'init参数错误'
+        });
+        return;
+    }
+    accountInfo.userID = options.data.userID;
+    accountInfo.userSig = options.data.userSig;
+    accountInfo.sdkAppID = options.data.sdkAppID;
+    accountInfo.userName = options.data.userName;
+    accountInfo.userAvatar = options.data.userAvatar;
+    // 登录IM
+    loginIM({
+        success: function (ret) {
+            options.success && options.success({
+                userID: accountInfo.userID,
+                userName: accountInfo.userName
+            });
+        },
+        fail: function (ret) {
+            console.error("IM登录失败:", JSON.stringify(ret));
+            options.fail && options.fail({
+                errCode: -999,
+                errMsg: "IM登录失败"
+            });
+        }
+    });
 }
 /**
  * [enterRoom 进入房间]
  * @param {options}
  *   data: {
- *   	roomID: 房间ID
+ *   	roomNo: 房间ID
  *   }
  *   success: 成功回调
  *   fail: 失败回调
@@ -61,7 +105,7 @@ function setListener(options) {
 function enterRoom(options) {
     roomInfo.isCreator = false;
     roomInfo.isJoinGroup = false;
-    if (!options || !options.data.roomID) {
+    if (!options || !options.data.roomNo) {
         console.log('enterRoom参数错误', options);
         options.fail && options.fail({
             errCode: -9,
@@ -69,83 +113,29 @@ function enterRoom(options) {
         });
         return;
     }
-    roomInfo.roomID = options.data.roomID;
+    roomInfo.roomNo = options.data.roomNo;
     proto_enterRoom({
         success: function (ret) {
             options.success && options.success(ret);
-            var userInfo = {
-                userName: accountInfo.userName,
-                userAvatar: accountInfo.userAvatar
-            }
-            addAudience({
-                data: {
-                    roomID: options.data.roomID,
-                    userID: accountInfo.userID,
-                    userInfo: JSON.stringify(userInfo)
-                }
-            })
+
         },
         fail: options.fail
     });
 }
+/**
+ * [proto_enterRoom 进入房间预处理]
+ * @param {options}
+ *   data: {
+ *   	roomNo: 房间ID
+ *   }
+ *   success: 成功回调
+ *   fail: 失败回调
+ */
 function proto_enterRoom(options) {
-    console.log('开始IM: ', roomInfo.roomID);
-    timHandler.applyJoinBigGroup(roomInfo.roomID, afterJoinBigGroup, {
+    console.log('开始IM: ', roomInfo.roomNo);
+    timHandler.applyJoinBigGroup(roomInfo.roomNo, afterJoinBigGroup, {
         success: function (ret) {
-            // getAnchors({
-            //     data: {
-            //         roomID: roomInfo.roomID
-            //     },
-            //     success: function (ret) {
-            //         console.log(ret, '进入房间成功')
-            //         roomInfo.roomID = ret.data.roomID;
-            //         roomInfo.roomInfo = ret.data.roomInfo;
-            //         roomInfo.roomCreator = ret.data.roomCreator;
-            //         roomInfo.mixedPlayURL = ret.data.mixedPlayURL;
-            //         options.success && options.success({
-            //             roomID: roomInfo.roomID,
-            //             roomCreator: roomInfo.roomCreator,
-            //             mixedPlayURL: roomInfo.mixedPlayURL,
-            //             pushers: ret.data.pushers
-            //         });
-            //     },
-            //     fail: function (ret) {
-            //         options.fail && options.fail({
-            //             errCode: ret.errCode,
-            //             errMsg: ret.errMsg || '拉取主播信息失败'
-            //         });
-            //     }
-            // });
-
-            // let groupPromise = tim.joinGroup({
-            //     groupID: this.data.roomNo,
-            //     type: TIM.TYPES.GRP_AVCHATROOM,
-            // });
-            // groupPromise.then((groupRes) => {
-            //     let self = this;
-            //     let tim = this.data.tim
-
-            //     let message = tim.createTextMessage({
-            //         to: this.data.roomNo,
-            //         type: TIM.TYPES.MSG_TEXT,
-            //         conversationType: TIM.TYPES.CONV_GROUP,
-            //         payload: {
-            //             text: JSON.stringify({
-            //                 code: '103',
-            //                 data: { useName: this.data.nickName, msg: '进入直播间' },
-            //             }),
-            //         },
-            //     });
-            //     let res = await tim.sendMessage(message);
-            //     console.log('登陆后加入群组````````````````', groupRes.data)
-
-            // }).catch((imError) => {
-            //     log.error('joinGroup imError')
-
-            // })
-
-
-            //xxxx 加入群聊
+            //加入群以后的操作
         },
 
         fail: options.fail
@@ -170,7 +160,7 @@ function sendRoomTextMsg(options) {
     }
     timHandler.sendTextMessage({
         text: options.data.msg,
-        to: options.data.roomID
+        to: options.data.roomNo
     }, options);
 }
 
@@ -179,7 +169,7 @@ function sendRoomTextMsg(options) {
  * [loginIM 登录IM]
  * @param {options}
  *   data: {
- *   	roomID: 房间ID
+ *   	roomNo: 房间ID
  *   }
  *   success: 成功回调
  *   fail: 失败回调
@@ -191,12 +181,12 @@ function loginIM(options) {
     //初始化IM
     timHandler.init({
         // accountMode: accountInfo.accountMode,
-        // accountType: '0',
+        accountType: '0',
         sdkAppID: accountInfo.sdkAppID,
-        //  avChatRoomId: options.roomID || 0,
-        //  selType: TIM.TYPES.CONV_GROUP,
-        //  selToID: options.roomID || 0,
-        //  selSess: null,//当前聊天会话
+        avChatroomNo: accountInfo.roomNo || 0,
+        selType: TIM.TYPES.CONV_GROUP,
+        selToID: accountInfo.roomNo || 0,
+        selSess: null,//当前聊天会话
         tim: tim
     });
 
@@ -212,7 +202,7 @@ function loginIM(options) {
 
     //监听事件
     initListener()
-    timHandler.sdkLogin(loginInfo, roomId, afterLoginIM, options);
+    timHandler.sdkLogin(loginInfo, roomInfo.roomNo, afterLoginIM, options);
 }
 function afterLoginIM(options) {
     // tim登录成功
@@ -232,7 +222,7 @@ function afterJoinBigGroup(options) {
         return;
     }
     roomInfo.isJoinGroup = true;
-    console.log('进入IM房间成功: ', roomInfo.roomID);
+    console.log('进入IM房间成功: ', roomInfo.roomNo);
     options.callback.success && options.callback.success({});
 }
 
@@ -261,7 +251,7 @@ function unbind() {
     tim.off(TIM.EVENT.ERROR, onError)
 }
 function onReceiveMessage() {
-    event.receiveMsg()
+    event.onRecvRoomTextMsg()
 
 }
 function onNetStateChange(event) {
@@ -288,5 +278,17 @@ function onError(event) {
     console.log('IM onERROR', event)
 
 }
+/**
+ * 对外暴露函数
+ * @type {Object}
+ */
+module.exports = {
+    login: login,//登录IM
+    enterRoom: enterRoom,// 加入房间
+    setListener: setListener,// 设置监听事件
+}
+
+
+
 
 

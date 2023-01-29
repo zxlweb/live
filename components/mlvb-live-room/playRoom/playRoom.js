@@ -3,7 +3,7 @@ const apiWork = require("../../utils/api");
 const utils = require("../../utils/util")
 const imgObj = require('../../utils/base64ImgFile');
 const log = require("../../utils/log")
-const liveroom = require("../mlbliveroomview/mlvbliveroomcore")
+var liveroom = require("../mlbliveroomview/mlvbliveroomcore.js")
 
 
 import TIM from 'tim-wx-sdk';
@@ -111,6 +111,7 @@ Page({
         goodsLimit: false,//是否被限购
         selectedSkuId: '',//当前选中的skuId
         pim: ["push", "pop"],
+        component: null,//直播组件对象
 
 
     },
@@ -179,12 +180,115 @@ Page({
 
     },
 
-    start: function () {
+    start() {
         var self = this;
         self.component = self.selectComponent("#id_liveroom")
         console.log('self.component: ', self.component)
         console.log('self:', self);
         self.component.start();
+    },
+    onRoomEvent(e) {
+        var self = this;
+        var args = e.detail;
+        console.log('onRoomEvent', args)
+        switch (args.tag) {
+            case 'roomClosed': {
+                wx.showModal({
+                    content: `房间已解散`,
+                    showCancel: false,
+                    complete: () => {
+                        wx.navigateBack({ delta: 1 })
+                    }
+                });
+                break;
+            }
+            case 'error': {
+                wx.showToast({
+                    title: `${args.detail}[${args.code}]`,
+                    icon: 'none',
+                    duration: 1500
+                })
+                if (args.code == 5000) {
+                    this.data.shouldExit = true;
+                } else {
+                    console.error("收到error:", args)
+                    if (args.code != -9004) {
+                        setTimeout(() => {
+                            wx.navigateBack({ delta: 1 })
+                        }, 1500)
+                    } else {
+                        self.setData({
+                            linked: false,
+                            phoneNum: ''
+                        })
+                    }
+                }
+                break;
+            }
+            case 'linkOn': { // 连麦连上
+                self.setData({
+                    linked: true,
+                    phoneNum: ''
+                })
+                break;
+            }
+            case 'linkOut': { //连麦断开
+                self.setData({
+                    linked: false,
+                    phoneNum: ''
+                })
+                break;
+            }
+            case 'recvTextMsg': {
+                console.log('收到消息:', e.detail.detail);
+                var msg = e.detail.detail;
+                self.receiveMsg(msg)
+                // self.data.comment.push({
+                //     content: msg.message,
+                //     name: msg.userName,
+                //     time: msg.time
+                // });
+                // self.setData({
+                //     comment: self.data.comment,
+                //     toview: ''
+                // });
+                // // 滚动条置底
+                // self.setData({
+                //     toview: 'scroll-bottom'
+                // });
+                // break;
+            }
+            case 'requestJoinAnchor': { //收到连麦请求
+                var jioner = args.detail;
+                var showBeginTime = Math.round(Date.now());
+                wx.showModal({
+                    content: `${jioner.userName} 请求连麦`,
+                    cancelText: '拒绝',
+                    confirmText: '接受',
+                    success: function (sm) {
+                        var timeLapse = Math.round(Date.now()) - showBeginTime;
+                        if (timeLapse < 10000) {
+                            if (sm.confirm) {
+                                console.log('用户点击同意')
+                                self.component && self.component.respondJoinAnchor(true, jioner);
+                            } else if (sm.cancel) {
+                                console.log('用户点击取消')
+                                self.component && self.component.respondJoinAnchor(false, jioner);
+                            }
+                        } else {
+                            wx.showToast({
+                                title: '连麦超时',
+                            })
+                        }
+                    }
+                })
+                break;
+            }
+            default: {
+                console.log('onRoomEvent default: ', e)
+                break;
+            }
+        }
     },
 
     onLoadCallback(options) {
@@ -425,6 +529,231 @@ Page({
         this.tim && this.tim.destroy();
 
 
+
+    },
+    // 接受消息处理
+    async receiveMsg(data) {
+        console.log('==================有人发消息', data.data[0])
+        console.log('系统通知了2222222222222222222222222222222')
+        let self = this;
+        let msg = { code: '0' };
+        data.data.forEach(async (v) => {
+            if (v.payload.text) {
+                msg = JSON.parse(v.payload.text);
+                if (msg.code == '100') {
+                    //  商品主推getLiveRoomMainPageInfo
+                    let mainDataRes = await this.getLiveRoomMainPageInfo();
+                    if (mainDataRes.code == 0) {
+                        let mainData = mainDataRes.data;
+                        let resLiveRoomGoodsDto = null
+
+                        if (mainData.hotGoodsDTO) {
+                            resLiveRoomGoodsDto = {
+                                skuId: mainData.hotGoodsDTO.skuId,
+                                hotGoodsFlag: mainData.hotGoodsDTO.hotGoodsFlag,
+                                sequenceNum: 1,
+                                mainPictureUrl: mainData.hotGoodsDTO.picUrl,
+                                goodsName: mainData.hotGoodsDTO.spuName,
+                                retailPrice: mainData.hotGoodsDTO.livePrice,
+                            }
+                        }
+                        self.setData({
+                            resLiveRoomGoodsDto,
+
+                        })
+                    }
+                } else if (msg.code * 1 == 101) {
+                    // 取消商品主推
+                    self.setData({
+                        resLiveRoomGoodsDto: null,
+                    })
+                } else if (msg.code * 1 == 102) {
+
+                    // 聊天消息
+                    let bulletData = this.data.bulletData
+                    let dmData = this.data.dmData
+                    bulletData.push({
+                        nick: msg.data.useName,
+                        message: msg.data.msg,
+                    });
+                    dmData.unshift({
+                        nick: msg.data.useName,
+                        message: msg.data.msg,
+                    })
+                    bulletData.forEach((v, index) => {
+                        switch ((index + 3) % 3) {
+                            case 0:
+                                v.color = 'rgb(45,255,55)';
+                                break;
+                            case 1:
+                                v.color = 'rgb(255,208,0)';
+                                break;
+                            case 2:
+                                v.color = 'rgb(0,255,244)';
+                                break;
+                        }
+                    });
+                    let rollId = `chat${self.data.bulletData.length - 1}`;
+                    self.setData({
+                        rollId, bulletData, dmData
+                    })
+                    self.setDM()
+                } else if (msg.code * 1 == 103) {
+                    // 进入直播间
+                    self.setData({
+                        isBuying: msg.data.useName + '进入直播间',
+                        attractModel: true,
+
+                    })
+                    clearTimeout(self.data.buyTime);
+                    let buyTime = setTimeout(function () {
+                        self.setData({
+                            attractModel: false
+                        })
+
+                    }, 5000);
+                    self.setData({
+                        buyTime
+                    })
+
+                } else if (msg.code * 1 == 104) {
+                    // 公告
+                    self.setData({
+                        notice_content: msg.data.content
+                    })
+
+                    if (msg.data.content) {
+                        self.scrillText(msg.data.content);
+                    }
+                } else if (msg.code * 1 == 106) {
+                    let livePraiseList = msg.data.praiseList ? msg.data.praiseList : []
+                    if (livePraiseList.length > 3) {
+                        livePraiseList = livePraiseList.splice(0, 3)
+                    }
+                    // 前四排行榜/人气值
+                    if (msg.data.praiseList) {
+                        let headData = self.data.headData;
+                        headData.livePraiseList = livePraiseList
+                        self.setData({
+                            headData
+                        })
+
+                    }
+
+                } else if (msg.code * 1 == 107) {
+                    //  直播间商品数量
+                    self.setData({
+                        goodsNum: msg.data.goodsCount
+                    })
+
+                } else if (msg.code * 1 == 108) {
+                    //  点赞
+                    // let count = this.data.count;
+                    // count += 1;
+                    // this.setData({
+                    //     count
+                    // })
+
+                } else if (msg.code * 1 == 109) {
+
+                    // 人气值
+                    // console.log('人气值变化-------------------------------', msg)
+
+                    let headData = self.data.headData;
+                    headData.popularity = msg.data.popularity
+                    self.setData({
+                        headData
+                    })
+                } else if (msg.code * 1 == 110) {
+                    // 抢购
+                    // 昵称脱敏
+
+                    self.setData({
+                        isBuying: msg.data.useName + msg.data.msg,
+                        attractModel: true
+                    })
+                    clearTimeout(self.data.buyTime);
+                    let buyTime = setTimeout(function () {
+                        self.setData({
+                            attractModel: false
+                        })
+                    }, 5000);
+                    self.setData({
+                        buyTime
+                    })
+                } else if (msg.code * 1 == 111) {
+                    //冻结
+                    self.setData({
+                        frozen: true
+                    })
+                } else if (msg.code * 1 == 114) {
+                    // 主播断流  直播结束
+                    if (msg.data.liveRecordNo != this.data.liveRecordNo) return
+                    self.setData({
+                        liveOverModal: true,
+                        leaveType: 2
+                    })
+
+                } else if (msg.code * 1 == 115) {
+                    // console.log('恢复了~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~', msg)
+                    self.setData({
+                        isCutOff: false
+                    })
+
+                }
+            } else {
+                // if (v.payload.operationType == 5) {
+                //     // 直播间被解散
+                //     wx.showModal({
+                //         title: '直播结束',
+                //         content: '当前直播已结束，敬请期待下次精彩',
+                //         showCancel: false,
+                //         confirmText: '返回首页',
+                //         success(res) {
+                //             if (res.confirm) {
+                //                 // console.log('用户点击确定')
+                //                 wx.reLaunch({
+                //                     url: '/pages/index/index',
+                //                 });
+                //             }
+                //         },
+                //     });
+                // }
+            }
+        });
+
+    },
+    // 进入直播间初始化
+    async readyMsg() {
+        let self = this;
+        let tim = this.data.tim
+
+        let message = tim.createTextMessage({
+            to: this.data.roomNo,
+            type: TIM.TYPES.MSG_TEXT,
+            conversationType: TIM.TYPES.CONV_GROUP,
+            payload: {
+                text: JSON.stringify({
+                    code: '103',
+                    data: { useName: this.data.nickName, msg: '进入直播间' },
+                }),
+            },
+        });
+        let res = await tim.sendMessage(message);
+        self.setData({
+            isBuying: self.data.nickName + '进入直播间',
+            attractModel: true
+        })
+        clearTimeout(self.data.buyTime);
+        let buyTime = null;
+        buyTime = setTimeout(function () {
+            self.setData({
+                attractModel: false
+            })
+        }, 5000);
+        self.setData({
+            buyTime
+        })
 
     },
     //获取直播状态接口 并且初始化userSign 
@@ -1050,7 +1379,7 @@ Page({
             data: { useName: this.data.nickName, msg: this.data.msg, role: '4' },
         })
         liveroom.sendRoomTextMsg({
-            data: { roomID: this.data.roomNo, msg: text },
+            data: { roomNo: this.data.roomNo, msg: text },
             success: () => {
                 // 发送成功
                 let msg = { code: '0' };
@@ -1125,7 +1454,7 @@ Page({
         // });
 
         liveroom.sendRoomTextMsg({
-            data: { roomID: this.data.roomNo, msg: text },
+            data: { roomNo: this.data.roomNo, msg: text },
         })
 
     },
@@ -1150,15 +1479,15 @@ Page({
   * 初始化加入群组
   */
     establishLink() {
-        // let options = { SDKAppID: this.data.SDKAppID };
+
+        let options = { SDKAppID: this.data.SDKAppID };
         // let tim = TIM.create(options);
         // tim.setLogLevel(1);//release级别，SDK 输出关键信息，生产环境时建议使用
-        // // tim.on(TIM.EVENT.MESSAGE_RECEIVED, this.receiveMsg);
-        // // tim.on(TIM.EVENT.SDK_NOT_READY, this.onSdkNotReady);
-        // // tim.on(TIM.EVENT.NET_STATE_CHANGE, this.onNetStateChange);
-        // // tim.on(TIM.EVENT.SDK_READY, this.onSdkReady);
-        // // tim.on(TIM.EVENT.ERROR, this.onError);
-
+        // tim.on(TIM.EVENT.MESSAGE_RECEIVED, this.receiveMsg);
+        // tim.on(TIM.EVENT.SDK_NOT_READY, this.onSdkNotReady);
+        // tim.on(TIM.EVENT.SDK_READY, this.onSdkReady);
+        // tim.on(TIM.EVENT.ERROR, this.onError);
+        // tim.on(TIM.EVENT.NET_STATE_CHANGE, this.onNetStateChange);
         // this.setData({
         //     tim
         // })
@@ -1187,6 +1516,26 @@ Page({
         //     log.error('login imError', imError)
 
         // })
+        let loginInfo = {
+            sdkAppID: this.data.sdkAppID,
+            userID: wx.getStorageSync('memberId'),
+            userSig: this.data.userSig,
+            userName: this.data.nickName,
+            userAvatar: ''
+        }
+
+        //登录IM
+        liveroom.login({
+            data: loginInfo,
+            success: function (ret) {
+                //登录成功
+
+            },
+            fail: function (ret) {
+                //登录失败
+
+            }
+        });
     },
     statechange(e) {
         if (this.data.liveMethod == 2) {

@@ -4,6 +4,13 @@
 <view class="pagess {{isShowPopup1?'move':''}}" style="height:{{screenHeight}}px" wx:else>
   <!-- object-fit="fillCrop" 该属性解决黑边问题 -->
   <!-- 海报 -->
+  <mlvb-live-room id="id_liveroom" roomNo="{{roomNo}}" bindRoomEvent="onRoomEvent">
+    <video slot='video' id="video-player" src="{{recordLiveVideoUrl}}" wx:if="{{liveMethod==2}}" autoplay='true' style="width:100%;height:100%" controls="false" />
+    <navigation slot='navigation' headData='{{headData}}' styleInfo="{{styleInfo}}" fullScreen="{{fullScreen}}" styleArr="{{styleArr}}" headTmpName='head3' bind:showRankList="shoRankModal" bindfullscreenchange="onFullScreenChange" bind:extFullScreen="exitFullScreen" />
+    <cover-view slot='liveLike'>
+      <live-like count="{{count}}" bind:likeOver="handleLikeChange" />
+    </cover-view>
+  </mlvb-live-room>
   <view wx:if="{{isSaveImg}}" class="posterMask" bindtap="toCancel">
     <view class="save-img">
       <image src="http://htd-government.oss-cn-shanghai.aliyuncs.com/base/1653876556350_9.744852524272218_081c1802-fc24-46a9-b230-2021339be33e.png" class="close-saveBtn" catchtap="closeSaveBtn" />

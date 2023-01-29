@@ -1,4 +1,4 @@
 <block wx:if="{{template == 'float'}}">
     <import src='../floattemplate/floattemplate.wxml' />
-    <template is="floattemplate" data="{{    userName}}" />
+    <template is="floattemplate" data="{{userName}}" />
 </block>
